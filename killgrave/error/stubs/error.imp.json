@@ -1,0 +1,29 @@
+[
+  {
+    "request": {
+      "method": "GET",
+      "endpoint": "/error/bigerror"
+    },
+    "response": {
+      "status": 200,
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "bodyFile": "responses/bigerror.json"
+    }
+  },
+  {
+    "request": {
+      "method": "GET",
+      "endpoint": "/error/smallerror"
+    },
+    "response": {
+      "status": 200,
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "bodyFile": "responses/smallerror.json"
+    }
+  }
+
+]

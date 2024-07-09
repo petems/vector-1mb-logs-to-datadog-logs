@@ -1,0 +1,22 @@
+version: '3.9'
+services:
+  killgrave:
+    image: friendsofgo/killgrave:0.4.1
+    working_dir: /app
+    command: -config config.yml
+    ports:
+      - 8090:80
+    volumes:
+      - ./killgrave/error:/app
+  vector:
+    image: timberio/vector:0.30.0-alpine
+    depends_on:
+      killgrave:
+        condition: service_started
+    ports:
+      - 8686:8686
+    environment:
+      - DD_API_KEY
+      - LOG=info
+    volumes:
+      - ./vector:/etc/vector:ro

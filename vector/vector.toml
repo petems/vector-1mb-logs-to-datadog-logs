@@ -1,0 +1,29 @@
+[api]
+enabled = true
+address = "0.0.0.0:8686"
+playground = true
+
+[sources.dummy_http_json]
+type = "http_client"
+endpoint = "http://killgrave:80/error/bigerror"
+method = "GET"
+decoding.codec = "json"
+scrape_interval_secs = 60
+
+[transforms.xml_to_json]
+type = "remap"
+inputs = ["dummy_http_json"]
+source = """
+# Add a timestamp
+.timestamp = now()
+new_message = parse_xml!(.message, text_key: "value", parse_number: false)
+.message = new_message"""
+timezone = "local"
+
+[sinks.stdout]
+type = "console"
+inputs = ["xml_to_json"]
+target = "stdout"
+
+[sinks.stdout.encoding]
+codec = "json"
