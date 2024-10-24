@@ -21,7 +21,15 @@ It then uses the `parse_xml` function to read the XML, and convert it to JSON, a
 > WIP: Figure out a way of slicing the now JSON-ified log into smaller parts with VRL
 
 To run this scenario, make sure you have the `DD_API_KEY` environment variable set to your Datadog
-API key and then run:
+API key, for example with `envchain`:
+
+```
+$ envchain --set vector_datadog DD_API_KEY
+ector_datadog.DD_API_KEY: 123
+$ envchain env vector_datadog docker compose up
+```
+
+Run the composer:
 
 ```bash
 $ docker compose up
@@ -44,4 +52,94 @@ vector-1    | 2024-07-09T13:13:29.100721Z  INFO vector: Vector has started. debu
 vector-1    | 2024-07-09T13:13:29.102300Z  INFO vector::internal_events::api: API server running. address=0.0.0.0:8686 playground=http://0.0.0.0:8686/playground
 vector-1    | {"body":"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<library>\n<book>\n\t<title>Velit eius rerum aliquam est.</title>\n\t<author>Norma Haley</author>\n\t<genre>totam</genre>\n\t<year>1970</year>\n\t<publisher>https://examplefile.com</publisher>\n</book>\n<book>\n\t<title>Laboriosam minus reprehenderit.</title>\n\t<author>Jocelyn Kris</author>\n\t<genre>commodi</genre>\n\t<year>1988</year>\n\t<publisher>https://examplefile.com</publisher>\n</book>\n<book>\n\t<title>Sint sequi totam sunt.</title>\n\t<author>Audie Pagac PhD</author>\n\t<genre>dignissimos</genre>\n\t<year>1975</year>\n\t<publisher>https://examplefile.com</publisher>\n</book>\n<book>\n\t<title>Ipsum molestiae enim omnis.</title>\n\t<author>Judy Moen</author>\n\t<genre>eos</genre>\n\t<year>1972</year>\n\t<publisher>https://examplefile.com</publisher>\n</book>\n<book>\n\t<title>Ut pariatur dolorum aspernatur.</title>\n\t<author>Leonor Strosin</author>\n\t<genre>totam</genre>\n\t<year>1972</year>\n\t<publisher>https://examplefile.com</publisher>\n</book>\n<book>\n\t<title>Culpa repellendus impedit quis.</title>\n\t<author>Ms. Caroline Reichert MD</author>\n\t<genre>molestias</genre>\n\t<year>2000</year>\n\t<publisher>https://examplefile.com</publisher>\n</book>\n<book>\n\t<title>Dolores vero id rerum.</title>\n\t<author>Tobin Thompson
 [Truncated as it's a big string]
+```
+
+You can now see the log within the Datadog Logs explorer:
+![image](https://github.com/user-attachments/assets/a399b0ca-565a-4dbb-86c8-c2ffe0b0dfb1)
+
+You can also use the Datadogs Log Search API to find the log and see it's JSON-ified XML result with tools like `jq`:
+
+```bash
+response=$(curl -L -X POST "https://api.datadoghq.eu/api/v2/logs/events/search" \
+  -H "Content-Type: application/json" \
+  -H "DD-API-KEY: $DD_API_KEY" \
+  -H "DD-APPLICATION-KEY: $DATADOG_APP_KEY" --data-raw '{
+  "filter": {
+    "from": "now-2d",
+    "to": "now",
+    "query": "source:vector"
+  },
+  "page": {
+    "limit": 1000
+  }
+}')
+
+echo $response | jq
+```
+
+An example, again using the `envchain` tool (Note: You will also need an App Key for this):
+
+```bash
+$ envchain vector_datadog ENV bash curl_logs.sh
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  834k  100  834k  100   124   994k    147 --:--:-- --:--:-- --:--:--  993k
+[
+  {
+    "id": "AgAAAZK-LaMOxSqNiQAAAAAAAAAYAAAAAEFaSy1MYXhkQUFDVlVYM2NDSnRPekFBQQAAACQAAAAAMDE5MmJlMzctNGQ3MC00MGE5LTgwMGUtNmVmNjgzMmZlODJl",
+    "type": "log",
+    "attributes": {
+      "attributes": {
+        "library": {
+          "book": [
+            {
+              "year": "1970",
+              "author": "Norma Haley",
+              "genre": "totam",
+              "publisher": "https://examplefile.com",
+              "title": "Velit eius rerum aliquam est."
+            },
+            {
+              "year": "1988",
+              "author": "Jocelyn Kris",
+              "genre": "commodi",
+              "publisher": "https://examplefile.com",
+              "title": "Laboriosam minus reprehenderit."
+            },
+            {
+              "year": "1975",
+              "author": "Audie Pagac PhD",
+              "genre": "dignissimos",
+              "publisher": "https://examplefile.com",
+              "title": "Sint sequi totam sunt."
+            },
+[TRUNCATED LOG RESULT]
+{
+              "year": "2022",
+              "author": "Ms. Leanna Nitzsche",
+              "genre": "corrupti",
+              "publisher": "https://examplefile.com",
+              "title": "Aliquam vero."
+            },
+            {
+              "year": "1984",
+              "author": "Dr. Alvah Leuschke PhD",
+              "genre": "quia",
+              "publisher": "https://examplefile.com",
+              "title": "Placeat non."
+            }
+          ]
+        },
+        "source_type": "http_client",
+        "timestamp": 1729767514894
+      },
+      "status": "info",
+      "timestamp": "2024-10-24T10:58:34.894Z",
+      "tags": [
+        "datadog.submission_auth:api_key",
+        "source:vector"
+      ]
+    }
+  }
+]
 ```
