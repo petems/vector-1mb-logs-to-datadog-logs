@@ -9,13 +9,16 @@ services:
     volumes:
       - ./killgrave/error:/app
   vector:
-    image: timberio/vector:0.30.0-alpine
+    image: timberio/vector:0.42.0-alpine
+    # image: timberio/vector:latest-alpine - Uncomment this if tag no longer exists
     depends_on:
       killgrave:
         condition: service_started
     ports:
       - 8686:8686
+    command: ["-c", "/etc/vector/vector.toml"]
     environment:
+      - DD_SITE
       - DD_API_KEY
       - LOG=info
     volumes:
