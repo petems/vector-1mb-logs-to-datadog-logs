@@ -10,24 +10,30 @@ method = "GET"
 decoding.codec = "json"
 scrape_interval_secs = 60
 
+[sinks.gcp_bucket]
+type = "gcp_cloud_storage"
+inputs = ["dummy_http_json"]
+credentials_path = "/etc/vector/gcp-credentials.json"
+bucket = "peter-souter-vector-gcp-storage-project"
+key_prefix = "uploaded-vector-xml-file.log"
+filename_time_format = ""
+filename_append_uuid = false
+acl = "public-read"
+
+[sinks.gcp_bucket.encoding]
+codec = "raw_message"
+
 [transforms.xml_to_json]
 type = "remap"
 inputs = ["dummy_http_json"]
 source = """
 .ddsource = "vector" # add (special attribute https://vector.dev/docs/reference/configuration/sinks/datadog_logs/#attributes)
+.ddtags = "gcp_url:https://storage.googleapis.com/peter-souter-vector-gcp-storage-project/uploaded-vector-xml-file.log"
 # Add a timestamp
 .timestamp = now()
 new_message = parse_xml!(.message, text_key: "value", parse_number: false)
 .message = new_message"""
 timezone = "local"
-
-[sinks.stdout]
-type = "console"
-inputs = ["xml_to_json"]
-target = "stdout"
-
-[sinks.stdout.encoding]
-codec = "json"
 
 [sinks.datadog_logs]
 type = "datadog_logs"
