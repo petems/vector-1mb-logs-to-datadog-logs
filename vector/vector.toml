@@ -21,14 +21,60 @@ new_message = parse_xml!(.message, text_key: "value", parse_number: false)
 .message = new_message"""
 timezone = "local"
 
-[sinks.stdout]
-type = "console"
+# Transform: First 5 books with numbering
+[transforms.first_5_books_numbered]
+type = "remap"
 inputs = ["xml_to_json"]
+source = """
+# Store original metadata
+ddsource = .ddsource
+ts = .timestamp
+
+# Get the books array and take first 5
+books = array!(.message.library.book)
+books = slice!(books, 0, 5)
+
+# Add metadata and book number to each book
+counter = 0
+. = map_values(books) -> |book| {
+  counter = counter + 1
+  book.ddsource = ddsource
+  book.timestamp = ts
+  book.book_label = "Book " + to_string(counter)
+  book
+}
+"""
+
+# Transform: Keep full message
+[transforms.full_message]
+type = "remap"
+inputs = ["xml_to_json"]
+source = """
+# Keep the full parsed message structure
+# Just ensure we have the metadata fields
+.message_type = "full_xml_content"
+"""
+
+[sinks.stdout_numbered]
+type = "console"
+inputs = ["first_5_books_numbered"]
 target = "stdout"
 
-[sinks.stdout.encoding]
+[sinks.stdout_numbered.encoding]
 codec = "json"
 
-[sinks.datadog_logs]
+[sinks.stdout_full]
+type = "console"
+inputs = ["full_message"]
+target = "stdout"
+
+[sinks.stdout_full.encoding]
+codec = "json"
+
+[sinks.datadog_logs_numbered]
 type = "datadog_logs"
-inputs = [ "xml_to_json" ]
+inputs = [ "first_5_books_numbered" ]
+
+[sinks.datadog_logs_full]
+type = "datadog_logs"
+inputs = [ "full_message" ]
