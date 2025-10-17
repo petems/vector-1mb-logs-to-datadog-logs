@@ -20,6 +20,6 @@ services:
     environment:
       - DD_SITE
       - DD_API_KEY
-      - LOG=info
+      - LOG=debug
     volumes:
       - ./vector:/etc/vector:ro
